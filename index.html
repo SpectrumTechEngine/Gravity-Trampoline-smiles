@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gravity Trampoline: The Smiles</title>
+<meta name="theme-color" content="#0f172a">
+<!-- Lets phones install this as a proper app (these files sit next to index.html) -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="smilesicon.png">
+<link rel="apple-touch-icon" href="smilesicon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GT Smiles">
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 14px;
+  background: #0f172a;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+h1 {
+  margin: 5px 0;
+  font-size: 30px;
+}
+
+#instructions {
+  max-width: 850px;
+  margin: 5px auto 12px;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+#canvas-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 850px;
+  margin: auto;
+  background: #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#canvas-wrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  padding: 10px;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  border: 3px solid #334155;
+  border-radius: 12px;
+  background: #dff5ff;
+  touch-action: none;
+  object-fit: contain;
+}
+
+#winnerPopup {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 23, 42, 0.92);
+  border: 3px solid #facc15;
+  color: #facc15;
+  padding: 20px 40px;
+  border-radius: 16px;
+  font-size: 32px;
+  font-weight: bold;
+  box-shadow: 0 0 30px rgba(250, 204, 21, 0.6);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* User Profile & In-Theme Modal */
+#userDisplay {
+  max-width: 850px;
+  margin: 5px auto;
+  font-size: 16px;
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+#userModal {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.modalBox {
+  background: #1e293b;
+  border: 3px solid #38bdf8;
+  border-radius: 16px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+  text-align: center;
+}
+
+.modalBox h2 {
+  margin-top: 0;
+  color: #38bdf8;
+  font-size: 24px;
+}
+
+.modalBox input {
+  width: 100%;
+  padding: 12px;
+  margin: 15px 0 20px;
+  border-radius: 8px;
+  border: 2px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+}
+
+.modalBox input:focus {
+  border-color: #38bdf8;
+}
+
+#stats {
+  max-width: 850px;
+  margin: 9px auto;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-weight: bold;
+}
+
+#status {
+  min-height: 24px;
+  font-weight: bold;
+  margin: 5px;
+}
+
+#moreBtn { background: #334155; color: #e2e8f0; }
+#moreMenu { display: flex; justify-content: center; gap: 7px; margin: 0 auto 8px; }
+#moreMenu[hidden] { display: none; }
+.ste-logo { display: block; width: 150px; max-width: 45%; height: auto; margin: 14px auto 6px; opacity: .85; }
+#winnerPopup.big { width: min(88%, 560px); box-sizing: border-box; font-size: clamp(18px, 5vw, 34px); text-align: center; line-height: 1.35; padding: 18px 16px; }
+
+#controls {
+  max-width: 850px;
+  margin: 8px auto;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #38bdf8;
+  color: #082f49;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+#launch {
+  background: #22c55e;
+  color: #052e16;
+}
+
+#fullscreen {
+  background: #a855f7;
+  color: #3b0764;
+}
+
+#levelSelect {
+  display: none;
+  max-width: 850px;
+  margin: 15px auto;
+  padding: 15px;
+  background: #1e293b;
+  border-radius: 12px;
+}
+
+.levelButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.levelButton {
+  min-width: 48px;
+}
+
+.locked {
+  background: #475569;
+  color: #cbd5e1;
+}
+
+#stars {
+  letter-spacing: 3px;
+  font-size: 19px;
+}
+
+.worldTab { background: #334155; color: #e2e8f0; }
+.worldTab.active { background: #facc15; color: #422006; }
+#levelSelect strong { display: block; margin-top: 6px; }
+
+/* ---- shared additions ---- */
+#moreMenu { display: flex; justify-content: center; gap: 7px; margin: 0 auto 8px; }
+#moreMenu[hidden] { display: none; }
+.ste-logo { display: block; width: 150px; max-width: 45%; height: auto; margin: 14px auto 6px; opacity: .85; }
+#winnerPopup.big { width: min(88%, 560px); box-sizing: border-box; font-size: clamp(18px, 5vw, 34px); text-align: center; line-height: 1.35; padding: 18px 16px; }
+.worldTabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 4px; }
+.worldTab { font-size: 16px; padding: 12px 18px; }
+.levelButton.current { outline: 3px solid currentColor; outline-offset: 2px; }
+</style>
+</head>
+
+<body>
+
+<h1>Gravity Trampoline: <span style="white-space:nowrap">The Smiles</span></h1>
+
+<div id="userDisplay">Player: <span id="userNameText">Player1</span> | Total Score: <span id="scoreText">0</span></div>
+
+<div id="instructions">
+Draw straight trampoline lines, then press Launch.
+Bounce the ball into the portal without touching the floor or the obstacles.
+</div>
+
+<div id="canvas-wrapper">
+  <canvas id="game" width="850" height="540" aria-label="Gravity Trampoline game"></canvas>
+  <div id="winnerPopup">YOU ARE A WINNER!</div>
+</div>
+
+<div id="stats">
+  <span id="levelText">Level 1</span>
+  <span id="inkText">Trampoline left: 300</span>
+  <span id="bounceText">Bounces: 0</span>
+  <span id="comboText">Combo: 0</span>
+  <span id="stars">☆☆☆</span>
+</div>
+
+<div id="status">Draw a trampoline, then press Launch.</div>
+
+<div id="controls">
+  <button id="launch">Launch</button>
+  <button id="undo">Undo</button>
+  <button id="clear">Clear</button>
+  <button id="restart">Restart</button>
+  <button id="next" disabled hidden>Next Level</button>
+  <button id="levels">Level Select</button>
+  <button id="sound">Sound: On</button>
+  <button id="moreBtn" aria-expanded="false">⋯ More</button>
+</div>
+<div id="moreMenu" hidden>
+  <button id="fullscreen">Fullscreen</button>
+  <button id="changeUser">Change Player</button>
+</div>
+
+<div id="levelSelect">
+  <strong>Pick a world</strong>
+  <div class="worldTabs" id="worldTabs"></div>
+  <strong>Select a Level</strong>
+  <div class="levelButtons" id="levelButtons"></div>
+</div>
+
+<img class="ste-logo" src="data:image/webp;base64,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" alt="Created By The Spectrum Tech Engine" />
+
+<div id="userModal">
+  <div class="modalBox">
+    <h2>ENTER PLAYER NAME</h2>
+    <input type="text" id="userInput" maxlength="15" placeholder="Player Name...">
+    <button id="saveUserBtn">READY TO PLAY</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   GRAVITY TRAMPOLINE: THE SMILES
+   Worlds, levels and artwork. The game engine is below.
+========================================================= */
+
+const LAVA_LEVELS = [
+  { ink: 300, portal: { x: 720, y: 415 }, obstacles: [] },
+  { ink: 310, portal: { x: 720, y: 315 }, obstacles: [] },
+  { ink: 320, portal: { x: 700, y: 190 }, obstacles: [{ x: 440, y: 310, r: 22 }] },
+  { ink: 280, portal: { x: 730, y: 400 }, obstacles: [{ x: 380, y: 410, r: 22 }, { x: 500, y: 300, r: 22 }] },
+  { ink: 270, portal: { x: 720, y: 285 }, obstacles: [{ x: 350, y: 350, r: 22, moving: true, speedX: 40, speedY: 0 }] },
+  { ink: 255, portal: { x: 720, y: 170 }, obstacles: [{ x: 300, y: 350, r: 22, moving: true, speedX: 50, speedY: 0 }, { x: 540, y: 270, r: 22, moving: true, speedX: -40, speedY: 0 }] },
+  { ink: 240, portal: { x: 720, y: 405 }, obstacles: [{ x: 270, y: 405, r: 22, moving: true, speedX: 0, speedY: 30 }, { x: 500, y: 315, r: 22, moving: true, speedX: 60, speedY: 0 }] },
+  { ink: 225, portal: { x: 720, y: 270 }, obstacles: [{ x: 250, y: 365, r: 22 }, { x: 470, y: 285, r: 22, moving: true, speedX: 70, speedY: 20 }] },
+  { ink: 210, portal: { x: 730, y: 155 }, obstacles: [{ x: 230, y: 410, r: 22 }, { x: 420, y: 320, r: 22, moving: true, speedX: 80, speedY: 0 }, { x: 590, y: 230, r: 22, moving: true, speedX: 0, speedY: 50 }] },
+  { ink: 195, portal: { x: 720, y: 380 }, obstacles: [{ x: 210, y: 420, r: 22, moving: true, speedX: 60, speedY: 0 }, { x: 390, y: 340, r: 22, moving: true, speedX: -60, speedY: 0 }, { x: 550, y: 275, r: 22, moving: true, speedX: 80, speedY: 30 }] },
+  { ink: 180, portal: { x: 700, y: 180 }, movingPortal: true, obstacles: [{ x: 220, y: 390, r: 22, moving: true, speedX: 70, speedY: 20 }, { x: 400, y: 300, r: 22, moving: true, speedX: -80, speedY: 0 }, { x: 575, y: 225, r: 22, moving: true, speedX: 90, speedY: 40 }] },
+  { ink: 165, portal: { x: 710, y: 350 }, movingPortal: true, obstacles: [{ x: 190, y: 410, r: 22, moving: true, speedX: 90, speedY: 0 }, { x: 360, y: 330, r: 22, moving: true, speedX: -100, speedY: 30 }, { x: 530, y: 250, r: 22, moving: true, speedX: 110, speedY: -30 }] }
+];
+
+/* River Valley: bees buzz about, grumpy rain clouds sulk, and the river
+   carries the smiley away if it lands in the water */
+const RIVER_LEVELS = [
+  { ink: 330, portal: { x: 720, y: 400 }, obstacles: [] },
+  { ink: 320, portal: { x: 700, y: 250 }, obstacles: [{ type: "cloud", x: 430, y: 330, r: 26 }] },
+  { ink: 310, portal: { x: 730, y: 190 }, obstacles: [{ type: "bee", x: 450, y: 260, r: 16 }] },
+  { ink: 300, portal: { x: 720, y: 400 }, obstacles: [{ type: "cloud", x: 380, y: 380, r: 26 }, { type: "bee", x: 560, y: 260, r: 16 }] },
+  { ink: 290, portal: { x: 720, y: 300 }, obstacles: [{ type: "bee", x: 420, y: 330, r: 16, path: { ax: 60, speed: 1.2 } }] },
+  { ink: 280, portal: { x: 730, y: 190 }, obstacles: [{ type: "cloud", x: 300, y: 390, r: 26 }, { type: "bee", x: 520, y: 270, r: 16, path: { ax: 70, ay: 30, ky: 2, speed: 1 } }] },
+  { ink: 270, portal: { x: 720, y: 410 }, obstacles: [{ type: "bee", x: 330, y: 300, r: 16, path: { ax: 50, ay: 40, ky: 2, speed: 1.4 } }, { type: "cloud", x: 560, y: 320, r: 26, path: { ax: 60, speed: .8 } }] },
+  { ink: 260, portal: { x: 720, y: 250 }, obstacles: [{ type: "cloud", x: 280, y: 410, r: 26 }, { type: "cloud", x: 480, y: 300, r: 26 }, { type: "bee", x: 620, y: 380, r: 16, path: { ay: 60, speed: 1.3 } }] },
+  { ink: 250, portal: { x: 730, y: 170 }, obstacles: [{ type: "bee", x: 300, y: 330, r: 16, path: { ax: 60, speed: 1.5 } }, { type: "bee", x: 500, y: 230, r: 16, path: { ax: 60, ay: 30, ky: 2, speed: 1.2, phase: 1 } }, { type: "cloud", x: 620, y: 340, r: 26 }] },
+  { ink: 240, portal: { x: 720, y: 370 }, movingPortal: true, obstacles: [{ type: "cloud", x: 260, y: 400, r: 26 }, { type: "bee", x: 420, y: 300, r: 16, path: { ax: 70, speed: 1.3 } }, { type: "bee", x: 600, y: 240, r: 16, path: { ay: 50, speed: 1.6 } }] },
+  { ink: 230, portal: { x: 710, y: 210 }, movingPortal: true, obstacles: [{ type: "cloud", x: 300, y: 300, r: 26, path: { ax: 50, speed: .9 } }, { type: "bee", x: 460, y: 400, r: 16, path: { ax: 80, speed: 1.4 } }, { type: "bee", x: 560, y: 230, r: 16, path: { ax: 60, ay: 30, ky: 2, speed: 1.1 } }] },
+  { ink: 220, portal: { x: 720, y: 330 }, movingPortal: true, obstacles: [{ type: "cloud", x: 250, y: 390, r: 26 }, { type: "cloud", x: 430, y: 250, r: 26, path: { ax: 60, speed: .8, phase: 2 } }, { type: "bee", x: 560, y: 390, r: 16, path: { ax: 70, speed: 1.6 } }, { type: "bee", x: 640, y: 200, r: 16, path: { ay: 50, speed: 1.3 } }] }
+];
+
+/* ---------- little drawing helpers ---------- */
+function puff(ctx, x, y, s) {
+  ctx.beginPath();
+  ctx.arc(x, y, 22 * s, 0, Math.PI * 2);
+  ctx.arc(x + 24 * s, y - 8 * s, 28 * s, 0, Math.PI * 2);
+  ctx.arc(x + 50 * s, y, 20 * s, 0, Math.PI * 2);
+  ctx.fill();
+}
+function hill(ctx, W, base, amp, len, off, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(0, base + 60);
+  for (let x = 0; x <= W; x += 10) ctx.lineTo(x, base - Math.sin(x / len + off) * amp - amp);
+  ctx.lineTo(W, base + 60);
+  ctx.closePath();
+  ctx.fill();
+}
+function sunFace(ctx, x, y, r, t) {
+  ctx.save();
+  ctx.strokeStyle = "rgba(250,204,21,.55)";
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2 + t * .2;
+    ctx.beginPath();
+    ctx.moveTo(x + Math.cos(a) * (r + 6), y + Math.sin(a) * (r + 6));
+    ctx.lineTo(x + Math.cos(a) * (r + 16), y + Math.sin(a) * (r + 16));
+    ctx.stroke();
+  }
+  const g = ctx.createRadialGradient(x - 8, y - 8, 4, x, y, r);
+  g.addColorStop(0, "#fff7c2"); g.addColorStop(1, "#fbbf24");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#b45309";
+  ctx.beginPath(); ctx.arc(x - 9, y - 4, 2.6, 0, Math.PI * 2); ctx.arc(x + 9, y - 4, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#b45309"; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.arc(x, y + 2, 9, .25, Math.PI - .25); ctx.stroke();
+  ctx.restore();
+}
+function tree(ctx, x, y, s) {
+  ctx.fillStyle = "#92400e";
+  ctx.fillRect(x - 3 * s, y - 22 * s, 6 * s, 22 * s);
+  ctx.fillStyle = "#16a34a";
+  ctx.beginPath(); ctx.arc(x, y - 30 * s, 16 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#22c55e";
+  ctx.beginPath(); ctx.arc(x - 5 * s, y - 34 * s, 8 * s, 0, Math.PI * 2); ctx.fill();
+}
+
+/* ---------- Lava Land ---------- */
+function lavaBackground(ctx, t, W, H, G) {
+  const sky = ctx.createLinearGradient(0, 0, 0, G);
+  sky.addColorStop(0, "#dbeafe"); sky.addColorStop(.65, "#fde2c4"); sky.addColorStop(1, "#fdba74");
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+  sunFace(ctx, 790, 70, 30, t);
+
+  ctx.fillStyle = "rgba(255,255,255,.7)";
+  [[120, 95, 1], [400, 72, .9], [610, 120, .75]].forEach(([x, y, s]) => puff(ctx, x + Math.sin(t * .15 + x) * 8, y, s));
+
+  // Far-off purple mountains and a friendly volcano puffing smoke
+  hill(ctx, W, G - 70, 26, 70, 1.3, "#c4b5fd");
+  ctx.fillStyle = "#a78bfa";
+  ctx.beginPath(); ctx.moveTo(430, G); ctx.lineTo(540, G - 170); ctx.lineTo(590, G - 170); ctx.lineTo(700, G); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#f97316";
+  ctx.beginPath(); ctx.ellipse(565, G - 170, 25, 7, 0, 0, Math.PI * 2); ctx.fill();
+  for (let i = 0; i < 3; i++) {
+    const p = (t * .25 + i / 3) % 1;
+    ctx.fillStyle = `rgba(148,163,184,${.45 * (1 - p)})`;
+    ctx.beginPath(); ctx.arc(565 + Math.sin(p * 5) * 12, G - 180 - p * 90, 10 + p * 18, 0, Math.PI * 2); ctx.fill();
+  }
+  hill(ctx, W, G - 18, 14, 45, 0, "#b45309");
+  ctx.fillStyle = "#78350f";
+  for (let x = 20; x < W; x += 95) { ctx.beginPath(); ctx.ellipse(x, G - 4, 16, 8, 0, Math.PI, 0); ctx.fill(); }
+}
+function lavaFloor(ctx, t, W, H, G) {
+  const g = ctx.createLinearGradient(0, G, 0, H);
+  g.addColorStop(0, "#ef4444"); g.addColorStop(.3, "#dc2626"); g.addColorStop(1, "#7f1d1d");
+  ctx.fillStyle = g; ctx.fillRect(0, G, W, H - G);
+  ctx.fillStyle = "#f97316";
+  ctx.beginPath(); ctx.moveTo(0, G);
+  for (let x = 0; x <= W; x += 20) ctx.lineTo(x, G + Math.sin(t * 3 + x * .05) * 3);
+  ctx.lineTo(W, G + 10); ctx.lineTo(0, G + 10); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#fef08a";
+  for (let i = 0; i < 6; i++) {
+    const bx = (i * 150 + t * 40) % (W + 20) - 10, by = G + 12 + Math.sin(t * 2 + i) * 6, s = 3 + Math.sin(t * 4 + i) * 2;
+    if (s > 1) { ctx.beginPath(); ctx.arc(bx, by, s, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+function lavaMonster(ctx, o, t) {
+  // A cheeky little lava blob: wobbly body, flickering flame hair,
+  // big eyes and a grumpy pout. Its hit area is still just o.r.
+  const r = o.r, ph = o.bx * .07;
+  const wob = k => 1 + Math.sin(t * 3 + ph + k) * .05;
+  ctx.save();
+  ctx.translate(o.x, o.y + Math.sin(t * 2.4 + ph) * 1.5);
+
+  // soft warm glow
+  const glow = ctx.createRadialGradient(0, 0, r * .6, 0, 0, r * 1.7);
+  glow.addColorStop(0, "rgba(251,146,60,.35)"); glow.addColorStop(1, "rgba(251,146,60,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(0, 0, r * 1.7, 0, Math.PI * 2); ctx.fill();
+
+  // flame "hair" flickering on top
+  [[-8, "#f97316", 1], [0, "#facc15", 1.25], [8, "#f97316", .95]].forEach(([x, c, h], i) => {
+    const fl = (Math.sin(t * 9 + i * 2 + ph) * .5 + .5) * 5;
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.moveTo(x - 6, -r * .7);
+    ctx.quadraticCurveTo(x - 5, -r - 6 * h - fl, x + Math.sin(t * 6 + i) * 2, -r - 12 * h - fl);
+    ctx.quadraticCurveTo(x + 5, -r - 6 * h - fl, x + 6, -r * .7);
+    ctx.closePath(); ctx.fill();
+  });
+
+  // wobbly blob body
+  const body = ctx.createRadialGradient(-r * .3, -r * .35, 2, 0, 0, r * 1.1);
+  body.addColorStop(0, "#fdba74"); body.addColorStop(.45, "#f97316"); body.addColorStop(1, "#b91c1c");
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  for (let i = 0; i <= 24; i++) {
+    const a = i / 24 * Math.PI * 2, rr = r * wob(i * .9) * (a > .2 && a < Math.PI - .2 ? 1.04 : 1);
+    const x = Math.cos(a) * rr, y = Math.sin(a) * rr * .95;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.closePath(); ctx.fill();
+
+  // two little drips under its chin
+  ctx.fillStyle = "#dc2626";
+  [[-8, 1], [9, 1.4]].forEach(([x, k]) => {
+    const d = 4 + (Math.sin(t * 2 + x + ph) * .5 + .5) * 4 * k;
+    ctx.beginPath(); ctx.moveTo(x - 3, r * .8); ctx.quadraticCurveTo(x, r * .8 + d * 2, x + 3, r * .8); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, r * .8 + d, 2.6, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // glowing cracks, like cooling lava
+  ctx.strokeStyle = "rgba(254,240,138,.75)"; ctx.lineWidth = 1.6; ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-r * .55, r * .5); ctx.lineTo(-r * .4, r * .65);
+  ctx.moveTo(r * .5, r * .45); ctx.lineTo(r * .38, r * .62); ctx.lineTo(r * .48, r * .72);
+  ctx.stroke();
+
+  // big cartoon eyes (they blink now and then)
+  const blink = ((t + ph) % 4) < .12 ? .15 : 1;
+  const look = Math.sin(t * .8 + ph) * 1.5;
+  [-7, 7].forEach(x => {
+    ctx.fillStyle = "#fff7ed";
+    ctx.beginPath(); ctx.ellipse(x, -3, 5.2, 6 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    if (blink > .5) {
+      ctx.fillStyle = "#431407";
+      ctx.beginPath(); ctx.arc(x + look, -2, 2.8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(x + look + 1, -3.2, 1, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+  // grumpy (not scary) eyebrows
+  ctx.strokeStyle = "#7c2d12"; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.moveTo(-12, -11); ctx.lineTo(-4, -9); ctx.moveTo(12, -11); ctx.lineTo(4, -9); ctx.stroke();
+  // pouty mouth with one tiny tooth
+  ctx.fillStyle = "#7c2d12";
+  ctx.beginPath(); ctx.ellipse(0, 9, 5, 3, 0, Math.PI, 0, true); ctx.fill();
+  ctx.fillStyle = "#fff7ed";
+  ctx.fillRect(-1.5, 6.2, 3, 2.4);
+  // rosy cheeks
+  ctx.fillStyle = "rgba(254,202,202,.55)";
+  ctx.beginPath(); ctx.arc(-13, 5, 3, 0, Math.PI * 2); ctx.arc(13, 5, 3, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore();
+}
+
+/* ---------- River Valley ---------- */
+function riverBackground(ctx, t, W, H, G) {
+  const sky = ctx.createLinearGradient(0, 0, 0, G);
+  sky.addColorStop(0, "#7dd3fc"); sky.addColorStop(1, "#e0f7ff");
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+  // A soft rainbow over the valley
+  ctx.save();
+  ctx.globalAlpha = .28;
+  ["#ef4444", "#f97316", "#facc15", "#22c55e", "#3b82f6", "#8b5cf6"].forEach((c, i) => {
+    ctx.strokeStyle = c; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.arc(470, G + 40, 330 - i * 9, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+  });
+  ctx.restore();
+
+  sunFace(ctx, 330, 105, 26, t);
+  ctx.fillStyle = "rgba(255,255,255,.85)";
+  [[160, 120, .8], [520, 60, 1], [700, 110, .7]].forEach(([x, y, s]) => puff(ctx, x + Math.sin(t * .2 + x) * 10, y, s));
+
+  hill(ctx, W, G - 85, 30, 80, .5, "#86efac");
+  hill(ctx, W, G - 45, 24, 55, 2.1, "#4ade80");
+  [[140, G - 60, .9], [330, G - 75, 1.1], [610, G - 58, .95], [760, G - 70, 1]].forEach(([x, y, s]) => tree(ctx, x, y, s));
+  hill(ctx, W, G - 10, 8, 35, 1, "#22c55e");
+  // flowers along the riverbank
+  for (let x = 25; x < W; x += 58) {
+    const c = ["#f472b6", "#facc15", "#ffffff", "#c084fc"][Math.floor(x / 58) % 4];
+    ctx.fillStyle = c;
+    for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 3.5, G - 8 + Math.sin(a) * 3.5, 2.6, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.arc(x, G - 8, 2, 0, Math.PI * 2); ctx.fill();
+  }
+}
+function riverWater(ctx, t, W, H, G, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const g = ctx.createLinearGradient(0, G, 0, H);
+  g.addColorStop(0, "#38bdf8"); g.addColorStop(1, "#1d4ed8");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.moveTo(0, G + 2);
+  for (let x = 0; x <= W; x += 16) ctx.lineTo(x, G + 2 + Math.sin(x * .045 - t * 3) * 3);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function riverFloor(ctx, t, W, H, G) {
+  riverWater(ctx, t, W, H, G, 1);
+  // ripples drifting downstream (left to right)
+  ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 2; ctx.lineCap = "round";
+  for (let i = 0; i < 9; i++) {
+    const x = (i * 105 + t * 70) % (W + 60) - 30, y = G + 14 + (i % 3) * 9;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 10, y - 4, x + 20, y); ctx.stroke();
+  }
+  // lily pads floating along
+  for (let i = 0; i < 3; i++) {
+    const x = (i * 300 + t * 35) % (W + 80) - 40, y = G + 22 + i * 4;
+    ctx.fillStyle = "#16a34a";
+    ctx.beginPath(); ctx.ellipse(x, y, 16, 6, 0, .3, Math.PI * 2 - .3); ctx.lineTo(x, y); ctx.fill();
+    if (i === 1) { ctx.fillStyle = "#f9a8d4"; ctx.beginPath(); ctx.arc(x + 4, y - 3, 4, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+function riverFront(ctx, t, W, H, G) {
+  // a see-through layer of water in front, so the smiley looks like it's floating
+  ctx.save();
+  ctx.globalAlpha = .75;
+  const g = ctx.createLinearGradient(0, G + 8, 0, H);
+  g.addColorStop(0, "#38bdf8"); g.addColorStop(1, "#1d4ed8");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.moveTo(0, G + 9);
+  for (let x = 0; x <= W; x += 16) ctx.lineTo(x, G + 9 + Math.sin(x * .06 - t * 4) * 2);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function bee(ctx, o, t) {
+  const flap = Math.sin(t * 40 + o.bx) * .5 + .5;
+  ctx.save();
+  ctx.translate(o.x, o.y);
+  // wings
+  ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.strokeStyle = "rgba(14,116,144,.45)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(-5, -o.r * .8, 7, 10 - flap * 4, -.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(6, -o.r * .8, 7, 10 - flap * 4, .4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // striped body
+  ctx.fillStyle = "#facc15";
+  ctx.beginPath(); ctx.ellipse(0, 0, o.r + 3, o.r - 2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = "#1f2937";
+  ctx.fillRect(-3, -o.r, 5, o.r * 2); ctx.fillRect(7, -o.r, 5, o.r * 2);
+  ctx.restore();
+  ctx.fillStyle = "#1f2937";
+  ctx.beginPath(); ctx.moveTo(o.r + 2, 0); ctx.lineTo(o.r + 8, -2); ctx.lineTo(o.r + 2, 3); ctx.fill();
+  // cheeky face
+  ctx.fillStyle = "#1f2937";
+  ctx.beginPath(); ctx.arc(-9, -3, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(-9, 3, 3, .2, Math.PI - .2); ctx.stroke();
+  ctx.fillStyle = "rgba(244,114,182,.6)";
+  ctx.beginPath(); ctx.arc(-13, 2, 2.4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function rainCloud(ctx, o, t) {
+  ctx.save();
+  // raindrops (just for show)
+  ctx.strokeStyle = "rgba(59,130,246,.55)"; ctx.lineWidth = 2; ctx.lineCap = "round";
+  for (let i = 0; i < 4; i++) {
+    const p = (t * 1.3 + i * .27) % 1, x = o.x - 18 + i * 12, y = o.y + o.r * .6 + p * 30;
+    ctx.globalAlpha = 1 - p;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 6); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#94a3b8";
+  ctx.beginPath();
+  ctx.arc(o.x - 20, o.y + 4, 16, 0, Math.PI * 2);
+  ctx.arc(o.x, o.y - 6, 22, 0, Math.PI * 2);
+  ctx.arc(o.x + 21, o.y + 4, 15, 0, Math.PI * 2);
+  ctx.rect(o.x - 20, o.y + 2, 41, 18);
+  ctx.fill();
+  ctx.fillStyle = "#cbd5e1";
+  ctx.beginPath(); ctx.arc(o.x - 5, o.y - 12, 10, 0, Math.PI * 2); ctx.fill();
+  // grumpy face
+  ctx.fillStyle = "#334155";
+  ctx.beginPath(); ctx.arc(o.x - 8, o.y + 2, 2.6, 0, Math.PI * 2); ctx.arc(o.x + 8, o.y + 2, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#334155"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(o.x - 12, o.y - 4); ctx.lineTo(o.x - 5, o.y - 2); ctx.moveTo(o.x + 12, o.y - 4); ctx.lineTo(o.x + 5, o.y - 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(o.x, o.y + 13, 5, Math.PI + .35, -.35); ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------- the smiley ---------- */
+function smiley(ctx, ball, s) {
+  ctx.save();
+  if (s.anim === "melt") {
+    const q = Math.min(1.8, 1 + s.timer * 2.5), y = ball.y + s.timer * 12;
+    ctx.globalAlpha = Math.max(0, 1 - s.timer * 1.5);
+    ctx.fillStyle = "#ef4444";
+    ctx.beginPath(); ctx.ellipse(ball.x, y, ball.r * q, Math.max(2, ball.r / q), 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#450a0a";
+    ctx.beginPath(); ctx.arc(ball.x - 4, y - 1 + s.timer * 4, 2, 0, Math.PI * 2); ctx.arc(ball.x + 4, y - 1 + s.timer * 4, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    return;
+  }
+  const worried = s.anim === "fall" || s.anim === "swept";
+  ctx.translate(ball.x, ball.y);
+  if (worried) ctx.rotate(s.spin);
+  ctx.shadowColor = "rgba(15,23,42,.35)"; ctx.shadowBlur = 9;
+  const g = ctx.createRadialGradient(-5, -6, 2, 0, 0, ball.r);
+  g.addColorStop(0, "#fef08a"); g.addColorStop(.5, "#facc15"); g.addColorStop(1, "#ca8a04");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#713f12"; ctx.strokeStyle = "#713f12"; ctx.lineWidth = 1.5;
+  if (worried) {
+    ctx.beginPath(); ctx.arc(-4, -3, 2.6, 0, Math.PI * 2); ctx.arc(4, -3, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 5, 3, 0, Math.PI * 2); ctx.stroke();   // "ooh!"
+  } else {
+    ctx.beginPath(); ctx.arc(-4, -2, 2, 0, Math.PI * 2); ctx.arc(4, -2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 1, 5, .2, Math.PI - .2); ctx.stroke();
+  }
+  ctx.restore();
+}
+function smilesPortal(ctx, portal, t) {
+  const pulse = Math.sin(t * 4) * 3;
+  ctx.save();
+  ctx.shadowColor = "#a855f7"; ctx.shadowBlur = 20;
+  ctx.strokeStyle = "#7e22ce"; ctx.lineWidth = 9;
+  ctx.beginPath(); ctx.arc(portal.x, portal.y, portal.r + pulse, 0, Math.PI * 2); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "#f0abfc"; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(portal.x, portal.y, portal.r - 8, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = "rgba(168,85,247,.18)";
+  ctx.beginPath(); ctx.arc(portal.x, portal.y, portal.r - 12, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = "#581c87"; ctx.font = "bold 14px Arial, sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("PORTAL", portal.x, portal.y + 52);
+}
+
+window.GT_THEME = {
+  storage: "gravityTrampoline",   // same save names as before, so progress is kept
+  winText: "YOU ARE A WINNER!",
+  hudColor: "#0f172a",
+  trailColor: "#facc15",
+  bounceColors: ["#facc15"],
+  bonkColors: ["#facc15", "#ffffff"],
+  winColors: ["#facc15", "#f472b6", "#a855f7"],
+  lineColors: { outer: "#0f766e", inner: "#5eead4", ghost: "rgba(15,118,110,.25)", preview: "#0f766e" },
+  drawBall: smiley,
+  drawPortal: smilesPortal,
+  worlds: [
+    {
+      id: "lava", name: "Lava Land", emoji: "🌋",
+      levels: LAVA_LEVELS,
+      drawBackground: lavaBackground, drawFloor: lavaFloor,
+      drawObstacle: (ctx, o, t) => lavaMonster(ctx, o, t),
+      floorLose: "melt", obstacleLose: "melt",
+      floorColors: ["#ef4444", "#f97316"],
+      floorMsg: "🔥 Oops! Too hot! You touched the lava.",
+      obstacleMsg: "🔥 Oops! You bumped a lava monster!"
+    },
+    {
+      id: "river", name: "River Valley", emoji: "🌊",
+      levels: RIVER_LEVELS,
+      drawBackground: riverBackground, drawFloor: riverFloor, drawFloorFront: riverFront,
+      drawObstacle: (ctx, o, t) => (o.type === "bee" ? bee(ctx, o, t) : rainCloud(ctx, o, t)),
+      floorLose: "swept", obstacleLose: "fall",
+      floorColors: ["#bae6fd", "#ffffff", "#38bdf8"],
+      floorMsg: "🌊 Whoosh! The river carried you away!",
+      obstacleMsg: o => o && o.type === "bee" ? "🐝 Bzzz! A bee bumped you into the river!" : "🌧️ Splosh! A grumpy cloud knocked you into the river!"
+    }
+  ]
+};
+
+</script>
+<script>
+(() => {
+"use strict";
+
+/* =========================================================
+   GRAVITY TRAMPOLINE ENGINE
+   Shared by The Smiles and The Future. Each game supplies a
+   theme (window.GT_THEME) with its worlds, levels and artwork.
+========================================================= */
+
+const T = window.GT_THEME;
+const P = T.storage;
+const LS = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+
+
+/* =========================================================
+   USER & CHEAT CODE SETUP
+========================================================= */
+
+let username = LS.get(P + "User") || "";
+let isStarLink = (username.trim() === "StarLink");
+let totalScore = Number(LS.get(P + "Score_" + username) || 0);
+
+const $ = id => document.getElementById(id);
+const userNameText = $("userNameText");
+const scoreText = $("scoreText");
+const userModal = $("userModal");
+const userInput = $("userInput");
+const saveUserBtn = $("saveUserBtn");
+
+function updateUserInfo() {
+  userNameText.textContent = username + (isStarLink ? " [CHEAT ACTIVE]" : "");
+  scoreText.textContent = totalScore;
+}
+
+function openUserModal() {
+  userInput.value = username;
+  userModal.style.display = "flex";
+  userInput.focus();
+}
+
+saveUserBtn.addEventListener("click", () => {
+  const val = userInput.value.trim();
+  if (!val) return;
+  username = val;
+  LS.set(P + "User", username);
+  isStarLink = (username === "StarLink");
+  totalScore = Number(LS.get(P + "Score_" + username) || 0);
+  updateUserInfo();
+  createLevelButtons();
+  userModal.style.display = "none";
+});
+userInput.addEventListener("keydown", e => { if (e.key === "Enter") saveUserBtn.click(); });
+$("changeUser").addEventListener("click", openUserModal);
+
+if (!username) openUserModal();
+else { userModal.style.display = "none"; updateUserInfo(); }
+
+
+/* =========================================================
+   CANVAS, FULLSCREEN & MENUS
+========================================================= */
+
+const canvas = $("game");
+const canvasWrapper = $("canvas-wrapper");
+const ctx = canvas.getContext("2d");
+const winnerPopup = $("winnerPopup");
+
+const W = canvas.width;
+const H = canvas.height;
+const GROUND_Y = 495;
+const BALL_RADIUS = 13;
+const GRAVITY = 1050;
+const BOUNCE_POWER = 1.0;
+
+// Phones and tablets have no space bar, so only mention it on computers
+const HAS_KEYBOARD = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+function say(touchText, keyboardText) { return HAS_KEYBOARD ? keyboardText : touchText; }
+
+$("moreBtn").addEventListener("click", () => {
+  const menu = $("moreMenu");
+  menu.hidden = !menu.hidden;
+  $("moreBtn").setAttribute("aria-expanded", String(!menu.hidden));
+});
+
+$("fullscreen").addEventListener("click", () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    (canvasWrapper.requestFullscreen || canvasWrapper.webkitRequestFullscreen || (() => {})).call(canvasWrapper);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+  }
+});
+
+const levelText = $("levelText");
+const inkText = $("inkText");
+const bounceText = $("bounceText");
+const comboText = $("comboText");
+const starsText = $("stars");
+const statusText = $("status");
+const launchBtn = $("launch");
+const undoBtn = $("undo");
+const clearBtn = $("clear");
+const restartBtn = $("restart");
+const nextBtn = $("next");
+const levelsBtn = $("levels");
+const soundBtn = $("sound");
+const levelSelect = $("levelSelect");
+const levelButtons = $("levelButtons");
+const worldTabs = $("worldTabs");
+
+
+/* =========================================================
+   WORLDS & PROGRESS
+========================================================= */
+
+const worlds = T.worlds;
+
+// World 1 keeps the original save name, so nobody loses their progress
+function unlockKey(w) { return w === 0 ? P + "Unlocked" : P + "Unlocked_" + worlds[w].id; }
+const unlocked = worlds.map((_, w) => Math.max(1, Number(LS.get(unlockKey(w)) || 1)));
+if (T.legacyUnlockKey) unlocked[0] = Math.max(unlocked[0], Number(LS.get(T.legacyUnlockKey) || 1));
+
+let worldIndex = Math.min(worlds.length - 1, Math.max(0, Number(LS.get(P + "World") || 0) || 0));
+let levelIndex = 0;
+
+function world() { return worlds[worldIndex]; }
+function levels() { return world().levels; }
+function currentLevel() { return levels()[levelIndex]; }
+function setWorld(i) { worldIndex = i; LS.set(P + "World", String(i)); }
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let ball, portal;
+let obstacles = [];
+let lines = [];
+let ghostLines = [];
+let inkUsed = 0;
+let launched = false, won = false, lost = false;
+
+// What happens after a crash: "melt", "swept" (carried off by the floor),
+// "zap" (fizzles out) or "fall" (drops down, then the floor takes over)
+let loseAnim = null;
+let animTimer = 0;
+let spin = 0;
+
+let bounceCount = 0, combo = 0, maxCombo = 0;
+let drawing = false, drawStart = null, pointerNow = null;
+let soundOn = true, audioContext = null;
+let particles = [], trail = [];
+let portalTime = 0;   // always ticking, for animations
+let levelTime = 0;    // time since Launch, drives the set paths
+let lastFrame = performance.now();
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+function audio() {
+  if (!soundOn) return null;
+  try {
+    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === "suspended") audioContext.resume();
+    return audioContext;
+  } catch (e) { return null; }
+}
+
+function sound(freq, duration, type = "sine", volume = 0.07, endFreq = null) {
+  const ac = audio();
+  if (!ac) return;
+  try {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ac.currentTime);
+    if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, ac.currentTime + duration);
+    gain.gain.setValueAtTime(volume, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start();
+    osc.stop(ac.currentTime + duration);
+  } catch (e) {}
+}
+
+function noise(duration, filterType, freq, volume) {
+  const ac = audio();
+  if (!ac) return;
+  try {
+    const size = Math.floor(ac.sampleRate * duration);
+    const buffer = ac.createBuffer(1, size, ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    const filter = ac.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(freq, ac.currentTime);
+    filter.Q.setValueAtTime(3, ac.currentTime);
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(volume, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+    src.start();
+  } catch (e) {}
+}
+
+function launchSound() { sound(220, .15, "triangle", .08, 440); }
+function bounceSound(speed) { const p = Math.min(900, 280 + speed * .35); sound(p, .09, "sine", .05, p * 1.25); }
+function winSound() {
+  [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) =>
+    setTimeout(() => sound(f, 0.2, "triangle", 0.09, f * 1.05), i * 60));
+}
+function perfectSound() { sound(784, .12, "triangle", .08); setTimeout(() => sound(988, .18, "triangle", .08), 100); }
+function meltSound() { sound(120, .6, "sawtooth", .1, 30); noise(.5, "bandpass", 800, .08); }
+function splashSound() { noise(.45, "lowpass", 1200, .12); sound(500, .5, "sine", .06, 900); }
+function zapSound() { sound(900, .35, "sawtooth", .06, 60); noise(.2, "highpass", 3000, .05); }
+function bonkSound() { sound(330, .18, "square", .05, 140); }
+
+
+/* =========================================================
+   LEVEL SETUP
+========================================================= */
+
+function resetLevel() {
+  const data = currentLevel();
+
+  ball = { x: 75, y: 70, vx: 0, vy: 0, r: BALL_RADIUS };
+  portal = { x: data.portal.x, y: data.portal.y, baseX: data.portal.x, baseY: data.portal.y, r: 28 };
+
+  // Fresh copies every time, so a restarted level plays out exactly the same
+  obstacles = data.obstacles.map(o => ({ ...o, bx: o.x, by: o.y }));
+
+  lines = [];
+  inkUsed = 0;
+  launched = won = lost = false;
+  loseAnim = null;
+  animTimer = 0;
+  spin = 0;
+  bounceCount = combo = maxCombo = 0;
+  drawing = false; drawStart = null; pointerNow = null;
+  particles = [];
+  trail = [];
+  levelTime = 0;
+  placeMovingObjects();
+
+  winnerPopup.style.display = "none";
+  statusText.textContent = say("Draw a trampoline, then tap Launch.", "Draw a trampoline, then press Launch or hit SPACE.");
+  updateUI();
+  draw();
+}
+
+// Where the portal and obstacles are on their set path right now
+function placeMovingObjects() {
+  const t = levelTime;
+  if (currentLevel().movingPortal) {
+    portal.x = portal.baseX + Math.sin(t * 1.4) * 55;
+    portal.y = portal.baseY + Math.cos(t * 1.1) * 35;
+  }
+  for (const o of obstacles) {
+    let x = o.bx, y = o.by;
+    if (o.moving) {                       // the original Lava Land paths
+      x = o.bx + Math.sin(t * (o.speedX * 0.03)) * 60;
+      y = o.by + Math.cos(t * (o.speedY * 0.03 || 1)) * 30;
+    } else if (o.path) {                  // new worlds: side-to-side, up-and-down or figure-of-eight
+      const p = o.path, ph = p.phase || 0;
+      x = o.bx + Math.sin(t * p.speed + ph) * (p.ax || 0);
+      y = o.by + Math.sin(t * p.speed * (p.ky || 1) + ph) * (p.ay || 0);
+    }
+    const hw = o.w ? 0 : o.r, hh = o.h ? 0 : o.r;
+    o.x = Math.max(hw, Math.min(W - (o.w || 0) - hw, x));
+    o.y = Math.max(hh, Math.min(GROUND_Y - (o.h || 0) - hh, y));
+  }
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function isLastLevel() { return levelIndex === levels().length - 1; }
+function nextWorld() { return worldIndex < worlds.length - 1 ? worlds[worldIndex + 1] : null; }
+
+function updateUI() {
+  const remaining = Math.max(0, Math.floor(currentLevel().ink - inkUsed));
+  levelText.textContent = world().emoji + " Level " + (levelIndex + 1);
+  inkText.textContent = "Trampoline left: " + remaining;
+  bounceText.textContent = "Bounces: " + bounceCount;
+  comboText.textContent = "Combo: " + combo;
+
+  launchBtn.disabled = launched || won || lost;
+  nextBtn.disabled = !won;
+  nextBtn.hidden = !won;
+  const nw = nextWorld();
+  nextBtn.textContent = (won && isLastLevel()) ? (nw ? nw.emoji + " " + nw.name + " ▶" : "Play Again") : "Next Level";
+
+  updateStars(false);
+}
+
+function updateStars(finalResult) {
+  let stars = 0;
+  if (won) {
+    stars = 1;
+    if (inkUsed / currentLevel().ink <= .70) stars++;
+    if (bounceCount <= 4 && maxCombo >= 2) stars++;
+  }
+  starsText.textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+  if (finalResult) {
+    totalScore += stars * 100;
+    LS.set(P + "Score_" + username, totalScore);
+    updateUserInfo();
+    if (stars === 3) perfectSound();
+  }
+}
+
+
+/* =========================================================
+   DRAWING TRAMPOLINES
+========================================================= */
+
+function distance(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+
+function pointerPosition(event) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height };
+}
+
+function addLine(a, b) {
+  const originalLength = distance(a, b);
+  if (originalLength < 12) return;
+  const remaining = currentLevel().ink - inkUsed;
+  if (remaining <= 0) { statusText.textContent = "You've used all your trampoline length!"; return; }
+  let end = { ...b };
+  if (originalLength > remaining) {
+    const s = remaining / originalLength;
+    end = { x: a.x + (b.x - a.x) * s, y: a.y + (b.y - a.y) * s };
+  }
+  lines.push({ a: { ...a }, b: { ...end } });
+  inkUsed += distance(a, end);
+  updateUI();
+}
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function closestPoint(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, den = dx * dx + dy * dy;
+  if (!den) return { x: a.x, y: a.y };
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / den));
+  return { x: a.x + dx * t, y: a.y + dy * t };
+}
+
+function collideLine(line) {
+  const p = closestPoint(ball, line.a, line.b);
+  let dx = ball.x - p.x, dy = ball.y - p.y, d = Math.hypot(dx, dy);
+  if (d >= ball.r) return false;
+  if (d < .001) { dx = line.a.y - line.b.y; dy = line.b.x - line.a.x; d = Math.hypot(dx, dy) || 1; }
+  const nx = dx / d, ny = dy / d;
+  ball.x = p.x + nx * (ball.r + .8);
+  ball.y = p.y + ny * (ball.r + .8);
+  const nv = ball.vx * nx + ball.vy * ny;
+  if (nv < 0) {
+    ball.vx -= (1 + BOUNCE_POWER) * nv * nx;
+    ball.vy -= (1 + BOUNCE_POWER) * nv * ny;
+    bounceCount++;
+    combo++;
+    maxCombo = Math.max(maxCombo, combo);
+    bounceSound(Math.hypot(ball.vx, ball.vy));
+    burst(ball.x, ball.y, 8, T.bounceColors, 40, 100, .5);
+    if (combo >= 3) statusText.textContent = "🔥 " + combo + " BOUNCE COMBO!";
+  }
+  return true;
+}
+
+function hitsObstacle(o) {
+  if (o.w) {   // a bar
+    const cx = Math.max(o.x, Math.min(o.x + o.w, ball.x));
+    const cy = Math.max(o.y, Math.min(o.y + o.h, ball.y));
+    return Math.hypot(ball.x - cx, ball.y - cy) < ball.r;
+  }
+  return Math.hypot(ball.x - o.x, ball.y - o.y) < ball.r + o.r;
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+function burst(x, y, count, colors, minSpeed, extraSpeed, life, upOnly) {
+  for (let i = 0; i < count; i++) {
+    const a = upOnly ? -Math.PI * Math.random() : Math.random() * Math.PI * 2;
+    const s = minSpeed + Math.random() * extraSpeed;
+    particles.push({
+      x: x + (Math.random() - .5) * 16, y: y + (Math.random() - .5) * 8,
+      vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      life: life + Math.random() * .3,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+}
+
+function updateParticles(dt) {
+  for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 250 * dt; p.life -= dt; }
+  particles = particles.filter(p => p.life > 0);
+}
+
+
+/* =========================================================
+   PHYSICS
+========================================================= */
+
+function updatePhysics(dt) {
+  updateParticles(dt);
+  for (const t of trail) t.life -= dt;
+  trail = trail.filter(t => t.life > 0);
+
+  if (loseAnim) { animTimer += dt; stepLoseAnim(dt); return; }
+  if (!launched || won || lost) return;
+
+  const steps = 5, step = dt / steps;
+  for (let s = 0; s < steps; s++) {
+    ball.vy += GRAVITY * step;
+    ball.x += ball.vx * step;
+    ball.y += ball.vy * step;
+
+    for (const line of lines) collideLine(line);
+
+    levelTime += step;
+    placeMovingObjects();
+
+    for (const o of obstacles) {
+      if (hitsObstacle(o)) { loseLevel("obstacle", o); return; }
+    }
+
+    if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+    if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+
+    if (Math.hypot(ball.x - portal.x, ball.y - portal.y) < portal.r - 4) { finishLevel(); return; }
+    if (ball.y + ball.r >= GROUND_Y) { loseLevel("floor"); return; }
+  }
+
+  if (Math.hypot(ball.vx, ball.vy) > 250) trail.push({ x: ball.x, y: ball.y, life: .35 });
+}
+
+
+/* =========================================================
+   CRASHES
+========================================================= */
+
+function loseLevel(kind, o) {
+  const w = world();
+  lost = true;
+  launched = false;
+  combo = 0;
+  ghostLines = lines.map(l => ({ a: { ...l.a }, b: { ...l.b } }));
+  const msg = kind === "floor" ? w.floorMsg : (typeof w.obstacleMsg === "function" ? w.obstacleMsg(o) : w.obstacleMsg);
+  statusText.textContent = msg + " " +
+    say("Tap Restart to have another go.", "Press Restart or hit SPACE to have another go.");
+  startAnim(kind === "floor" ? w.floorLose : w.obstacleLose);
+  updateUI();
+}
+
+function startAnim(anim) {
+  const w = world();
+  loseAnim = anim;
+  animTimer = 0;
+  if (anim === "fall") {
+    ball.vx *= .25;
+    ball.vy = Math.min(ball.vy, 0) * .3;
+    bonkSound();
+    burst(ball.x, ball.y, 10, T.bonkColors, 60, 120, .4);
+  } else if (anim === "melt") {
+    if (ball.y + ball.r >= GROUND_Y) ball.y = GROUND_Y - 2;
+    meltSound();
+    burst(ball.x, ball.y, 20, w.floorColors, 50, 120, .6, true);
+  } else if (anim === "swept") {
+    ball.y = GROUND_Y + 4;
+    splashSound();
+    burst(ball.x, GROUND_Y, 24, w.floorColors, 80, 160, .5, true);
+  } else if (anim === "zap") {
+    zapSound();
+    burst(ball.x, ball.y, 26, w.floorColors, 80, 220, .45);
+  }
+}
+
+function stepLoseAnim(dt) {
+  if (loseAnim === "fall") {
+    ball.vy += GRAVITY * dt;
+    ball.x = Math.max(ball.r, Math.min(W - ball.r, ball.x + ball.vx * dt));
+    ball.y += ball.vy * dt;
+    spin += dt * 9;
+    if (ball.y + ball.r >= GROUND_Y) startAnim(world().floorLose);
+  } else if (loseAnim === "swept") {
+    // The floor carries the ball away downstream until it's off the screen
+    ball.x += (140 + animTimer * 90) * dt;
+    ball.y = GROUND_Y + 4 + Math.sin(animTimer * 7) * 3;
+    spin += dt * 5;
+    if (ball.x < W + 40 && Math.random() < dt * 18) {
+      particles.push({ x: ball.x - 10, y: GROUND_Y + 2, vx: -40 - Math.random() * 40, vy: -60 - Math.random() * 60, life: .4, color: world().floorColors[0] });
+    }
+  }
+}
+
+
+/* =========================================================
+   WINNING
+========================================================= */
+
+function finishLevel() {
+  won = true;
+  launched = false;
+  ghostLines = [];
+  winSound();
+
+  if (levelIndex + 1 >= unlocked[worldIndex]) {
+    unlocked[worldIndex] = Math.min(levels().length, levelIndex + 2);
+    LS.set(unlockKey(worldIndex), unlocked[worldIndex]);
+  }
+
+  if (isLastLevel()) {
+    const nw = nextWorld();
+    statusText.textContent = "🏆 You finished all of " + world().name + "! " +
+      (nw ? say("Tap " + nw.name + " to explore the next world.", "Press SPACE to explore " + nw.name + ".")
+          : say("Tap Play Again to start from level 1.", "Press SPACE to play again from level 1."));
+    winnerPopup.innerHTML = "🏆 YOU DID IT! 🏆<br>" + world().name + " complete!";
+    winnerPopup.classList.add("big");
+    winnerPopup.style.display = "block";
+    setTimeout(winSound, 350);
+    setTimeout(winSound, 700);
+    for (let k = 0; k < 3; k++) setTimeout(() => burst(portal.x, portal.y, 35, T.winColors, 80, 180, .8), k * 300);
+    setTimeout(() => { winnerPopup.style.display = "none"; }, 4000);
+  } else {
+    statusText.textContent = "🎉 Level complete! " + say("Tap Next Level to keep going.", "Press SPACE to go to the Next Level.");
+    winnerPopup.textContent = T.winText;
+    winnerPopup.classList.remove("big");
+    winnerPopup.style.display = "block";
+    setTimeout(() => { winnerPopup.style.display = "none"; }, 500);
+  }
+
+  updateStars(true);
+  updateUI();
+  burst(portal.x, portal.y, 35, T.winColors, 80, 180, .8);
+}
+
+
+/* =========================================================
+   DRAWING
+========================================================= */
+
+function drawLines() {
+  const c = T.lineColors;
+  ctx.lineCap = "round";
+  if (ghostLines.length) {
+    ctx.save();
+    ctx.strokeStyle = c.ghost;
+    ctx.lineWidth = 8;
+    ctx.setLineDash([6, 6]);
+    for (const g of ghostLines) { ctx.beginPath(); ctx.moveTo(g.a.x, g.a.y); ctx.lineTo(g.b.x, g.b.y); ctx.stroke(); }
+    ctx.restore();
+  }
+  for (const l of lines) {
+    ctx.save();
+    if (c.glow) { ctx.shadowColor = c.glow; ctx.shadowBlur = 12; }
+    ctx.strokeStyle = c.outer; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(l.a.x, l.a.y); ctx.lineTo(l.b.x, l.b.y); ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = c.inner; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(l.a.x, l.a.y); ctx.lineTo(l.b.x, l.b.y); ctx.stroke();
+  }
+  if (drawing && drawStart && pointerNow) {
+    ctx.strokeStyle = c.preview; ctx.lineWidth = 8; ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.moveTo(drawStart.x, drawStart.y); ctx.lineTo(pointerNow.x, pointerNow.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawTrail() {
+  for (const t of trail) {
+    ctx.globalAlpha = Math.max(0, t.life / .35);
+    ctx.fillStyle = T.trailColor;
+    ctx.beginPath(); ctx.arc(t.x, t.y, 5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.6));
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function draw() {
+  const w = world();
+  const t = portalTime;
+  w.drawBackground(ctx, t, W, H, GROUND_Y);
+  w.drawFloor(ctx, t, W, H, GROUND_Y);
+  T.drawPortal(ctx, portal, t);
+  for (const o of obstacles) w.drawObstacle(ctx, o, t);
+  drawTrail();
+  drawLines();
+  drawParticles();
+  if (!(loseAnim === "swept" && ball.x > W + 30)) {
+    T.drawBall(ctx, ball, { anim: loseAnim, timer: animTimer, spin, time: t });
+  }
+  if (loseAnim === "swept" && w.drawFloorFront) w.drawFloorFront(ctx, t, W, H, GROUND_Y);
+
+  ctx.fillStyle = T.hudColor;
+  ctx.font = "bold 17px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(w.emoji + " " + w.name.toUpperCase() + " · LEVEL " + (levelIndex + 1), 16, 28);
+  if (!launched && !won && !lost) {
+    ctx.font = "14px Arial, sans-serif";
+    ctx.fillText("Ball waiting for Launch", 16, 50);
+  }
+}
+
+
+/* =========================================================
+   LEVEL & WORLD SELECT
+========================================================= */
+
+function createLevelButtons() {
+  worldTabs.innerHTML = "";
+  worlds.forEach((w, i) => {
+    const b = document.createElement("button");
+    b.className = "worldTab" + (i === worldIndex ? " active" : "");
+    b.textContent = w.emoji + " " + w.name;
+    b.addEventListener("click", () => {
+      setWorld(i);
+      levelIndex = 0;
+      ghostLines = [];
+      resetLevel();
+      createLevelButtons();
+    });
+    worldTabs.appendChild(b);
+  });
+
+  levelButtons.innerHTML = "";
+  levels().forEach((_, index) => {
+    const b = document.createElement("button");
+    b.className = "levelButton" + (index === levelIndex ? " current" : "");
+    b.textContent = index + 1;
+    if (!isStarLink && index + 1 > unlocked[worldIndex]) {
+      b.textContent = "🔒";
+      b.classList.add("locked");
+      b.disabled = true;
+    } else {
+      b.addEventListener("click", () => {
+        levelIndex = index;
+        levelSelect.style.display = "none";
+        ghostLines = [];
+        resetLevel();
+      });
+    }
+    levelButtons.appendChild(b);
+  });
+}
+
+
+/* =========================================================
+   ACTIONS & CONTROLS
+========================================================= */
+
+function handleLaunch() {
+  if (launched || won || lost) return;
+  audio();
+  ball.vx = 0; ball.vy = 0;
+  launched = true;
+  combo = 0;
+  statusText.textContent = "Launched! Guide the ball into the portal.";
+  launchSound();
+  updateUI();
+}
+
+function handleNextLevel() {
+  if (!isLastLevel()) levelIndex++;
+  else {
+    if (nextWorld()) setWorld(worldIndex + 1);
+    levelIndex = 0;
+  }
+  ghostLines = [];
+  resetLevel();
+  createLevelButtons();
+}
+
+window.addEventListener("keydown", e => {
+  if (e.code !== "Space" || userModal.style.display === "flex") return;
+  e.preventDefault();
+  if (won) handleNextLevel();
+  else if (!launched && !lost) handleLaunch();
+  else resetLevel();
+});
+
+launchBtn.addEventListener("click", handleLaunch);
+undoBtn.addEventListener("click", () => {
+  if (launched || won || lost) return;
+  const removed = lines.pop();
+  if (removed) inkUsed = Math.max(0, inkUsed - distance(removed.a, removed.b));
+  updateUI(); draw();
+});
+clearBtn.addEventListener("click", () => {
+  if (launched || won || lost) return;
+  lines = []; inkUsed = 0;
+  updateUI(); draw();
+  statusText.textContent = "Trampolines cleared.";
+});
+restartBtn.addEventListener("click", resetLevel);
+nextBtn.addEventListener("click", () => { if (won) handleNextLevel(); });
+levelsBtn.addEventListener("click", () => {
+  createLevelButtons();
+  levelSelect.style.display = levelSelect.style.display === "block" ? "none" : "block";
+});
+soundBtn.addEventListener("click", () => {
+  soundOn = !soundOn;
+  soundBtn.textContent = soundOn ? "Sound: On" : "Sound: Off";
+  if (soundOn) audio();
+});
+
+canvas.addEventListener("pointerdown", e => {
+  if (launched || won || lost) return;
+  const p = pointerPosition(e);
+  if (distance(p, ball) < BALL_RADIUS + 10 || distance(p, portal) < portal.r + 10) return;
+  drawing = true; drawStart = p; pointerNow = p;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", e => { if (drawing) { pointerNow = pointerPosition(e); draw(); } });
+canvas.addEventListener("pointerup", e => {
+  if (!drawing || !drawStart) return;
+  addLine(drawStart, pointerPosition(e));
+  drawing = false; drawStart = null; pointerNow = null;
+  draw();
+});
+canvas.addEventListener("pointercancel", () => { drawing = false; drawStart = null; pointerNow = null; draw(); });
+
+
+/* =========================================================
+   GAME LOOP & START
+========================================================= */
+
+function gameLoop(ts) {
+  const dt = Math.min((ts - lastFrame) / 1000, .04);
+  lastFrame = ts;
+  portalTime += dt;
+  updatePhysics(dt);
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+createLevelButtons();
+resetLevel();
+requestAnimationFrame(gameLoop);
+
+/*__TEST_HOOK__*/
+})();
+
+</script>
+
+</body>
+</html>
