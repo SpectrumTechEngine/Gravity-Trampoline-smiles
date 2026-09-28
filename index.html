@@ -248,6 +248,40 @@ button:disabled {
 .worldTabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 4px; }
 .worldTab { font-size: 16px; padding: 12px 18px; }
 .levelButton.current { outline: 3px solid currentColor; outline-offset: 2px; }
+
+/* ---- Phone held sideways: game on the left, buttons on the right ---- */
+@media (orientation: landscape) and (max-height: 600px) {
+  body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: repeat(9, auto) 1fr;
+    column-gap: 12px;
+    align-items: start;
+    padding: 8px;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  body > * { grid-column: 2; margin-left: 0; margin-right: 0; max-width: none; }
+  #canvas-wrapper { grid-column: 1; grid-row: 1 / -1; width: auto; margin: 0; align-self: start; position: sticky; top: 8px; }
+  /* Fit the whole board on screen, leaving about 290px for the buttons */
+  #game {
+    width: auto;
+    height: min(calc(100vh - 22px), calc((100vw - 310px) * 540 / 850));
+    height: min(calc(100dvh - 22px), calc((100vw - 310px) * 540 / 850));
+    max-height: none;
+  }
+  #canvas-wrapper:fullscreen #game { height: calc(100vh - 26px); }
+  h1 { font-size: 18px; margin: 2px 0; }
+  #userDisplay { font-size: 13px; margin: 2px 0; }
+  #instructions { font-size: 12px; margin: 2px 0 4px; }
+  #stats { font-size: 13px; margin: 4px 0; gap: 4px 10px; }
+  #status { font-size: 13px; min-height: 18px; margin: 2px 0; }
+  #controls, #moreMenu { margin: 4px 0; gap: 5px; flex-wrap: wrap; }
+  #controls button, #moreMenu button { padding: 8px 10px; font-size: 13px; }
+  #levelSelect { margin: 6px 0; padding: 8px; }
+  .worldTab { font-size: 13px; padding: 8px 10px; }
+  .ste-logo { width: 110px; margin: 8px auto 4px; }
+}
 </style>
 </head>
 
