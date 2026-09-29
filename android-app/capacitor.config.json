@@ -1,0 +1,10 @@
+{
+  "appId": "com.thespectrumtechengine.gravitysmiles",
+  "appName": "GT Smiles",
+  "webDir": "www",
+  "backgroundColor": "#0f172a",
+  "server": {
+    "url": "https://thespectrumtechengine.com/Gravity-Trampoline-smiles/",
+    "errorPath": "index.html"
+  }
+}
