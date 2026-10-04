@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#0f172a">
 <!-- Lets phones install this as a proper app (these files sit next to index.html) -->
 <link rel="manifest" href="manifest.webmanifest">
+<!-- Usage numbers and owner tools, shared by every Spectrum Tech Engine app -->
+<script src="https://thespectrumtechengine.com/ste-owner.js" data-app="gravity-trampoline-smiles" defer></script>
 <link rel="icon" type="image/png" href="smilesicon.png">
 <link rel="apple-touch-icon" href="smilesicon.png">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1215,6 +1217,7 @@ function updatePhysics(dt) {
 
 function loseLevel(kind, o) {
   const w = world();
+  ste('detail', 'lost-to-' + (kind === 'floor' ? 'the-floor' : 'an-obstacle'));
   lost = true;
   launched = false;
   combo = 0;
@@ -1274,6 +1277,8 @@ function stepLoseAnim(dt) {
 
 function finishLevel() {
   won = true;
+  ste('detail', world().name + ' level ' + (levelIndex + 1) + ' cleared');
+  if (isLastLevel()) ste('detail', world().name + ' completed');
   launched = false;
   ghostLines = [];
   winSound();
@@ -1430,11 +1435,15 @@ function createLevelButtons() {
    ACTIONS & CONTROLS
 ========================================================= */
 
+// Usage numbers for the owner (ste-owner.js on the website); never gets in the way of the game
+function ste(f, ...a) { try { if (window.STE && window.STE[f]) window.STE[f](...a); } catch (e) {} }
+
 function handleLaunch() {
   if (launched || won || lost) return;
   audio();
   ball.vx = 0; ball.vy = 0;
   launched = true;
+  ste('track', 'play');
   combo = 0;
   statusText.textContent = "Launched! Guide the ball into the portal.";
   launchSound();
