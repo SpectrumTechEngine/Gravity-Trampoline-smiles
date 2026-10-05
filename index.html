@@ -294,7 +294,7 @@ button:disabled {
 <div id="userDisplay">Player: <span id="userNameText">Player1</span> | Total Score: <span id="scoreText">0</span></div>
 
 <div id="instructions">
-Draw straight trampoline lines, then press Launch.
+Draw straight trampoline lines, then tap the sun (or press Launch).
 Bounce the ball into the portal without touching the floor or the obstacles.
 </div>
 
@@ -738,6 +738,7 @@ window.GT_THEME = {
       id: "lava", name: "Lava Land", emoji: "🌋",
       levels: LAVA_LEVELS,
       drawBackground: lavaBackground, drawFloor: lavaFloor,
+      launcher: { x: 790, y: 70, r: 30, word: "sun", ring: "rgba(234,88,12,.9)" },
       drawObstacle: (ctx, o, t) => lavaMonster(ctx, o, t),
       floorLose: "melt", obstacleLose: "melt",
       floorColors: ["#ef4444", "#f97316"],
@@ -748,6 +749,7 @@ window.GT_THEME = {
       id: "river", name: "River Valley", emoji: "🌊",
       levels: RIVER_LEVELS,
       drawBackground: riverBackground, drawFloor: riverFloor, drawFloorFront: riverFront,
+      launcher: { x: 330, y: 105, r: 26, word: "sun", ring: "rgba(234,88,12,.9)" },
       drawObstacle: (ctx, o, t) => (o.type === "bee" ? bee(ctx, o, t) : rainCloud(ctx, o, t)),
       floorLose: "swept", obstacleLose: "fall",
       floorColors: ["#bae6fd", "#ffffff", "#38bdf8"],
@@ -1011,7 +1013,7 @@ function resetLevel() {
   placeMovingObjects();
 
   winnerPopup.style.display = "none";
-  statusText.textContent = say("Draw a trampoline, then tap Launch.", "Draw a trampoline, then press Launch or hit SPACE.");
+  statusText.textContent = say(`Draw a trampoline, then tap the ${world().launcher ? world().launcher.word : "Launch button"} or Launch.`, "Draw a trampoline, then press Launch or hit SPACE.");
   updateUI();
   draw();
 }
@@ -1367,6 +1369,14 @@ function draw() {
   const w = world();
   const t = portalTime;
   w.drawBackground(ctx, t, W, H, GROUND_Y);
+  if (w.launcher && !launched && !won && !lost) {
+    const L = w.launcher, k = (Math.sin(t * 3.2) + 1) / 2;
+    ctx.save();
+    ctx.strokeStyle = L.ring || "rgba(255,255,255,.9)"; ctx.lineWidth = 3;
+    ctx.globalAlpha = .35 + .45 * k;
+    ctx.beginPath(); ctx.arc(L.x, L.y, L.r + 8 + k * 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
   w.drawFloor(ctx, t, W, H, GROUND_Y);
   T.drawPortal(ctx, portal, t);
   for (const o of obstacles) w.drawObstacle(ctx, o, t);
@@ -1384,7 +1394,11 @@ function draw() {
   ctx.fillText(w.emoji + " " + w.name.toUpperCase() + " · LEVEL " + (levelIndex + 1), 16, 28);
   if (!launched && !won && !lost) {
     ctx.font = "14px Arial, sans-serif";
-    ctx.fillText("Ball waiting for Launch", 16, 50);
+    const L = w.launcher;
+    ctx.fillText(L ? `Tap the ${L.word} to launch ${L.word === "planet" ? "🪐" : "☀️"}` : "Ball waiting for Launch", 16, 50);
+  } else if (w.launcher && (won || lost)) {
+    ctx.font = "14px Arial, sans-serif";
+    ctx.fillText(`Tap the ${w.launcher.word} ${won ? "for the next level" : "to try again"}`, 16, 50);
   }
 }
 
@@ -1494,9 +1508,16 @@ soundBtn.addEventListener("click", () => {
   if (soundOn) audio();
 });
 
+// The sun (or planet) in the sky is a launch button too: it is always on screen, even in fullscreen on a sideways phone
+function launcherHit(p) { const L = world().launcher; return !!L && distance(p, L) < L.r + 18; }
+let downAt = 0;
+
 canvas.addEventListener("pointerdown", e => {
-  if (launched || won || lost) return;
   const p = pointerPosition(e);
+  // after a win or a loss, the sun works like the Space key: next level, or try again
+  if ((won || lost) && launcherHit(p)) { if (won) handleNextLevel(); else resetLevel(); return; }
+  if (launched || won || lost) return;
+  downAt = performance.now();
   if (distance(p, ball) < BALL_RADIUS + 10 || distance(p, portal) < portal.r + 10) return;
   drawing = true; drawStart = p; pointerNow = p;
   canvas.setPointerCapture(e.pointerId);
@@ -1504,7 +1525,14 @@ canvas.addEventListener("pointerdown", e => {
 canvas.addEventListener("pointermove", e => { if (drawing) { pointerNow = pointerPosition(e); draw(); } });
 canvas.addEventListener("pointerup", e => {
   if (!drawing || !drawStart) return;
-  addLine(drawStart, pointerPosition(e));
+  const end = pointerPosition(e);
+  // a quick tap on the sun launches; a drag that starts there still draws a trampoline
+  if (distance(drawStart, end) < 12 && performance.now() - downAt < 600 && launcherHit(drawStart)) {
+    drawing = false; drawStart = null; pointerNow = null;
+    handleLaunch();
+    return;
+  }
+  addLine(drawStart, end);
   drawing = false; drawStart = null; pointerNow = null;
   draw();
 });
@@ -1533,5 +1561,7 @@ requestAnimationFrame(gameLoop);
 
 </script>
 
+<!-- Lets the app open offline once it has been visited, and be installed as an app -->
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>
