@@ -251,8 +251,8 @@ button:disabled {
 .worldTab { font-size: 16px; padding: 12px 18px; }
 .levelButton.current { outline: 3px solid currentColor; outline-offset: 2px; }
 
-/* ---- Phone held sideways: game on the left, buttons on the right ---- */
-@media (orientation: landscape) and (max-height: 600px) {
+/* ---- Phone held sideways, or a laptop screen: game on the left, buttons on the right, so Launch is always in view ---- */
+@media (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (min-width: 900px) and (max-height: 900px) {
   body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -264,7 +264,7 @@ button:disabled {
     min-height: 100dvh;
   }
   body > * { grid-column: 2; margin-left: 0; margin-right: 0; max-width: none; }
-  #canvas-wrapper { grid-column: 1; grid-row: 1 / -1; width: auto; margin: 0; align-self: start; position: sticky; top: 8px; }
+  #canvas-wrapper { grid-column: 1; grid-row: 1 / -1; width: auto; max-width: none; margin: 0; align-self: start; position: sticky; top: 8px; }
   /* Fit the whole board on screen, leaving about 290px for the buttons */
   #game {
     width: auto;
